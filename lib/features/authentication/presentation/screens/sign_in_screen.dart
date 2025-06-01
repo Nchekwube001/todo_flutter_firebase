@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_todo/common_widgets/async_value_ui.dart';
+import 'package:flutter_todo/features/authentication/controllers/auth_controller.dart';
 import 'package:flutter_todo/features/authentication/presentation/widgets/common_text_field.dart';
 import 'package:flutter_todo/routes/routes.dart';
 import 'package:flutter_todo/utils/app_styles.dart';
@@ -20,6 +22,34 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   final TextEditingController _emailEditingController = TextEditingController();
   final TextEditingController _passwordEditingController =
       TextEditingController();
+  void validateDetails() {
+    String email = _emailEditingController.text;
+    String password = _passwordEditingController.text;
+
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Email and Password cannot be empty")),
+      );
+      return;
+    } else if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(email)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Please enter a valid email address")),
+      );
+      return;
+    } else if (password.length < 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Password must be at least 6 characters long")),
+      );
+      return;
+    } else {
+      // If validation passes, navigate to the main screen
+      ref.read(authControllerProvider.notifier).signInWithEmailAndPassword(
+            email: email,
+            password: password,
+          );
+      // context.goNamed(AppRoutes.main.name);
+    }
+  }
 
   @override
   void dispose() {
@@ -30,7 +60,15 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final state = ref.watch(authControllerProvider);
     SizeConfig.init(context);
+
+    ref.listen(
+      authControllerProvider,
+      (previous, next) {
+        next.showAlertDialogOnError(context);
+      },
+    );
     return SafeArea(
       child: Scaffold(
         body: Padding(
@@ -81,11 +119,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                 ),
                 InkWell(
                   onTap: () {
-                    // Handle sign-in logic here
-                    // For example, you can call a sign-in function with the email and password
-                    String email = _emailEditingController.text;
-                    String password = _passwordEditingController.text;
-                    // Implement your sign-in logic here
+                    validateDetails();
                   },
                   child: Container(
                     alignment: Alignment.center,
@@ -95,9 +129,11 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                       color: Colors.green,
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: Text('Sign In',
-                        style: AppStyles.normalTextStyle
-                            .copyWith(color: Colors.white)),
+                    child: state.isLoading
+                        ? const CircularProgressIndicator()
+                        : Text('Sign In',
+                            style: AppStyles.normalTextStyle
+                                .copyWith(color: Colors.white)),
                   ),
                 ),
                 SizedBox(
