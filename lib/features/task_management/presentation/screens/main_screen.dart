@@ -23,6 +23,13 @@ class _MainScreenState extends State<MainScreen>
   void initState() {
     _tabController = TabController(length: 5, vsync: this);
     super.initState();
+    _tabController.addListener(() {
+      if (!_tabController.indexIsChanging) {
+        setState(() {
+          currentIndx = _tabController.index;
+        });
+      }
+    });
   }
 
   @override
@@ -34,8 +41,7 @@ class _MainScreenState extends State<MainScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Scaffold(
-          body: TabBarView(
+      body: TabBarView(
         controller: _tabController,
         children: [
           AllTasksScreen(),
@@ -44,7 +50,7 @@ class _MainScreenState extends State<MainScreen>
           CompletedTasksScreen(),
           AccountScreen(),
         ],
-      )),
+      ),
       bottomNavigationBar: BottomNavigationBar(
         items: [
           BottomNavigationBarItem(
